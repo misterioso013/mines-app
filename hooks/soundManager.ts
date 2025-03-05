@@ -21,7 +21,7 @@ class SoundManager {
       try {
         await this.sounds[soundName].replayAsync();
       } catch (error) {
-        console.error(`Error playing sound ${soundName}:`, error);
+        // Erro silencioso
       }
     }
   }
