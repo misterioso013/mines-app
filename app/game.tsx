@@ -7,14 +7,17 @@ import GameControls from '@/components/GameControls';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useAds } from '@/hooks/useAds';
 
 const { width } = Dimensions.get('window');
 
 export default function GameScreen() {
   const { balance, resetGame, gameWon, initializeSounds } = useGameStore();
+  const { showInterstitialIfReady } = useAds();
 
   useEffect(() => {
     initializeSounds();
+    useGameStore.setState({ showAd: showInterstitialIfReady });
   }, []);
 
   const handleResetGame = async () => {

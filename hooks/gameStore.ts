@@ -41,6 +41,7 @@ export interface GameState {
   calculateMultiplier: (revealedCount: number) => number;
   saveStats: () => Promise<void>;
   loadStats: () => Promise<void>;
+  showAd?: () => void;
 }
 
 const GRID_SIZE = 25;
@@ -148,6 +149,7 @@ const useGameStore = create<GameState>((set, get) => ({
       });
       get().incrementLosses();
       soundManager.playSound('bomb');
+      get().showAd?.();
     } else {
       const newRevealedCount = revealedCount + 1;
       const safeTiles = GRID_SIZE - minesCount;
@@ -173,6 +175,7 @@ const useGameStore = create<GameState>((set, get) => ({
         });
         get().incrementWins();
         get().updateBestCampaign(newPotentialWin);
+        get().showAd?.();
       }
     }
     
@@ -200,6 +203,7 @@ const useGameStore = create<GameState>((set, get) => ({
       get().updateBestCampaign(potentialWin);
       soundManager.playSound('swoosh');
       get().saveStats();
+      get().showAd?.();
     }
   },
   
