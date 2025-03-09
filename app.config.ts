@@ -1,6 +1,7 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
+  ...config,
   name: "Mines",
   slug: "mines",
   version: "0.0.1",
