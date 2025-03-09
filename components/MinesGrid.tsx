@@ -3,10 +3,12 @@ import { View, TouchableOpacity, StyleSheet, Dimensions, Animated, Text } from '
 import { useGameStore } from '@/hooks/gameStore';
 import { Ionicons } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const GRID_SIZE = 5;
 const GRID_PADDING = 10;
-const GRID_WIDTH = width - 40; // Reduzindo a largura total do grid
+// Calcula o tamanho do grid baseado na menor dimensão da tela
+const SCREEN_PADDING = 40;
+const GRID_WIDTH = Math.min(width - SCREEN_PADDING, height * 0.5);
 const TILE_SIZE = (GRID_WIDTH - GRID_PADDING * 2) / GRID_SIZE;
 const TILE_MARGIN = 2;
 
@@ -38,6 +40,8 @@ const MinesGrid: React.FC = () => {
           : '#2ecc40'
         : '#7fdbff';
 
+    const iconSize = Math.min(TILE_SIZE * 0.6, 24); // Limita o tamanho máximo do ícone
+
     return (
       <TouchableOpacity
         key={tile.id}
@@ -46,7 +50,7 @@ const MinesGrid: React.FC = () => {
         disabled={!gameActive || tile.revealed}
       >
         <Animated.View>
-          <Ionicons name={iconName} size={TILE_SIZE * 0.6} color={iconColor} />
+          <Ionicons name={iconName} size={iconSize} color={iconColor} />
         </Animated.View>
       </TouchableOpacity>
     );
@@ -72,16 +76,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
+    width: '100%',
   },
   infoContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
+    width: GRID_WIDTH,
     marginBottom: 10,
+    paddingHorizontal: 5,
   },
   infoText: {
     color: 'white',
-    fontSize: 12,
+    fontSize: Math.min(12, GRID_WIDTH * 0.03),
   },
   grid: {
     flexDirection: 'row',
@@ -91,6 +97,8 @@ const styles = StyleSheet.create({
     padding: GRID_PADDING,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   tile: {
     width: TILE_SIZE - TILE_MARGIN * 2,

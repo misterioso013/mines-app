@@ -1,63 +1,108 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import mobileAds, { InterstitialAd, AdEventType, TestIds } from 'react-native-google-mobile-ads';
+import { Platform } from 'react-native';
 
-const interstitialId = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ID_ANDROID ?? TestIds.INTERSTITIAL;
+// ID do anúncio baseado no ambiente
+const adUnitId = __DEV__ 
+  ? TestIds.INTERSTITIAL 
+  : process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_ID_ANDROID || TestIds.INTERSTITIAL;
 
-let playCount = 0;
-let nextAdThreshold = Math.floor(Math.random() * (10 - 7 + 1)) + 7;
+console.log(`🔧 Ambiente: ${__DEV__ ? 'Desenvolvimento' : 'Produção'}`);
+console.log(`📱 Plataforma: ${Platform.OS}`);
+console.log(`📢 ID do anúncio: ${adUnitId}`);
+
+const AD_INTERVAL = 1 * 60 * 1000; // 2 minutos em milissegundos
 
 export const useAds = () => {
-  const [interstitialAd, setInterstitialAd] = useState<InterstitialAd | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const interstitialRef = useRef<InterstitialAd | null>(null);
 
   useEffect(() => {
-    mobileAds()
-      .initialize()
-      .then(adapterStatuses => {
-        // Inicialização concluída
-      });
-  }, []);
-
-  const loadInterstitial = () => {
-    const interstitial = InterstitialAd.createForAdRequest(interstitialId, {
+    // Cria uma nova instância do anúncio
+    interstitialRef.current = InterstitialAd.createForAdRequest(adUnitId, {
       keywords: ['game', 'casual', 'mines'],
     });
 
-    interstitial.addAdEventListener(AdEventType.LOADED, () => {
-      setInterstitialAd(interstitial);
+    const loadAd = () => {
+      if (!interstitialRef.current) return;
+      
+      console.log('📥 Carregando novo anúncio...');
+      interstitialRef.current.load();
+    };
+
+    const unsubscribeLoaded = interstitialRef.current.addAdEventListener(AdEventType.LOADED, () => {
+      console.log('✅ Anúncio carregado com sucesso');
+      setLoaded(true);
+      
+      // Mostra o anúncio assim que carregar pela primeira vez
+      if (!timerRef.current) {
+        showAd();
+      }
     });
 
-    interstitial.addAdEventListener(AdEventType.CLOSED, () => {
-      setInterstitialAd(null);
+    const unsubscribeError = interstitialRef.current.addAdEventListener(AdEventType.ERROR, (error) => {
+      console.error('❌ Erro ao carregar anúncio:', error);
+      setLoaded(false);
+      // Tenta carregar novamente após erro
+      setTimeout(loadAd, 5000);
     });
 
-    interstitial.load();
-  };
+    const unsubscribeClosed = interstitialRef.current.addAdEventListener(AdEventType.CLOSED, () => {
+      console.log('🔒 Anúncio fechado');
+      setLoaded(false);
+      loadAd(); // Carrega o próximo anúncio
+    });
 
-  const showInterstitialIfReady = async () => {
-    playCount++;
-    
-    if (playCount >= nextAdThreshold) {
-      if (!interstitialAd) {
-        loadInterstitial();
-        return;
+    // Inicializa o AdMob e carrega o primeiro anúncio
+    const init = async () => {
+      try {
+        await mobileAds().initialize();
+        console.log('✅ AdMob inicializado');
+        loadAd();
+      } catch (error) {
+        console.error('❌ Erro ao inicializar AdMob:', error);
       }
+    };
 
-      if (interstitialAd.loaded) {
-        await interstitialAd.show();
-        playCount = 0;
-        nextAdThreshold = Math.floor(Math.random() * (10 - 7 + 1)) + 7;
+    init();
+
+    // Configura o timer para mostrar anúncios periodicamente
+    timerRef.current = setInterval(() => {
+      console.log('⏰ Timer: Verificando anúncio...');
+      if (loaded) {
+        showAd();
+      } else {
+        loadAd();
       }
-    }
-  };
+    }, AD_INTERVAL);
 
-  useEffect(() => {
-    loadInterstitial();
     return () => {
-      interstitialAd?.removeAllListeners();
+      unsubscribeLoaded();
+      unsubscribeError();
+      unsubscribeClosed();
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
     };
   }, []);
 
+  const showAd = async () => {
+    if (!loaded || !interstitialRef.current) {
+      console.log('⚠️ Anúncio não está pronto ainda');
+      return;
+    }
+
+    try {
+      console.log('🎯 Exibindo anúncio...');
+      await interstitialRef.current.show();
+    } catch (error) {
+      console.error('❌ Erro ao exibir anúncio:', error);
+      setLoaded(false);
+    }
+  };
+
   return {
-    showInterstitialIfReady
+    showAd: loaded ? showAd : null
   };
 }; 

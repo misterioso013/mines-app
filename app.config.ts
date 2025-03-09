@@ -19,14 +19,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       backgroundColor: "#ffffff"
     },
     package: "com.alldevs.mines",
-    versionCode: 1,
-    config: {
-      googleMobileAdsAppId: process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID
-    }
+    versionCode: 1
   },
   plugins: [
     "expo-router",
-    "react-native-google-mobile-ads"
+    [
+      "react-native-google-mobile-ads",
+      {
+        androidAppId: process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID,
+      }
+    ]
   ],
   experiments: {
     typedRoutes: true

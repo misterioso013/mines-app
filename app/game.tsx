@@ -16,8 +16,13 @@ export default function GameScreen() {
   const { showInterstitialIfReady } = useAds();
 
   useEffect(() => {
-    initializeSounds();
-    useGameStore.setState({ showAd: showInterstitialIfReady });
+    const initialize = async () => {
+      await initializeSounds();
+      useGameStore.setState({ showAd: showInterstitialIfReady });
+      console.log('Anúncios inicializados no GameScreen');
+    };
+    
+    initialize();
   }, []);
 
   const handleResetGame = async () => {
@@ -35,6 +40,7 @@ export default function GameScreen() {
             try {
               await AsyncStorage.removeItem('@mines:initial_balance');
               resetGame();
+              showInterstitialIfReady();
               router.replace('/');
             } catch (error) {
               console.error('Erro ao reiniciar o jogo:', error);
